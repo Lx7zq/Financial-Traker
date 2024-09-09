@@ -24,16 +24,16 @@ export const FinancialRecordProvider = ({ children }) => {
     fetchRecords();
   }, [user]);
 
-  const addRecord = async (record) => {
-    try {
-      const response = await FinancialServices.addRecord(record);
-      if (response.status === 200) {
-        setRecords((prev) => [...prev, response.data]); //ข้อมูลเดิมวางข้างหน้าแล้วแอดอันใหม่ไปข้างหลัง
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+ const AddRecord = async (record) => {
+   try {
+     const response = await FinancialServices.createFinancialRecord(record); // Corrected method name
+     if (response.status === 200) {
+       setRecords((prev) => [...prev, response.data]); // append new record to previous records
+     }
+   } catch (error) {
+     console.log(error);
+   }
+ };
 
   const updateRecord = async (id, newRecord) => {
     try {
@@ -69,7 +69,7 @@ export const FinancialRecordProvider = ({ children }) => {
 
   return (
     <FinancialRecordContext.Provider
-      value={{ records, addRecord, updateRecord, deleteRecord }}
+      value={{ records, AddRecord, updateRecord, deleteRecord }}
     >
       {children}
     </FinancialRecordContext.Provider>
