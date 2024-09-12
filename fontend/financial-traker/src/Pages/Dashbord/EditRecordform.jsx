@@ -39,6 +39,7 @@ const EditRecord = () => {
 
     loadRecord();
   }, [id, fetchRecords]); // เพิ่ม `fetchRecord` ใน dependencies
+  //test
 
   const handleChange = (e) => {
     const { name, value } = e.target;
