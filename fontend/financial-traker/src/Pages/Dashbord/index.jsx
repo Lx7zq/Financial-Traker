@@ -1,20 +1,21 @@
 import React from "react";
 import { useUser } from "@clerk/nextjs";
 import { useFinancialRecords } from "../../contexts/financial.context";
-import AddRecrodform from "./AddRecrodform";
 import FinancialRecordTable from "./FinancialRecordTable";
+import Addbutton from "./Addbutton";
 
 const dashbord = () => {
   const { user } = useUser();
   const { records } = useFinancialRecords();
   return (
-    <div className="max-w-screen-2xl container mx-auto xl:px-24 px-4">
+    <div className="max-w-screen-2xl container mx-auto xl:px-24 px-4 mt-16">
       <div className="text-center text-3xl md:text-4xl md:leading-snug font-bold my-2">
-        Welcome {user?.firstName} ! Here are you finance:
+        Welcome {user?.firstName} ! Here are your finances:
       </div>
-      <AddRecrodform />
-      <div>Total Monthly: 1000฿</div>
-      <FinancialRecordTable />
+      <Addbutton />
+      <div className="mt-10">
+        <FinancialRecordTable />
+      </div>
     </div>
   );
 };

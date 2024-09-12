@@ -1,86 +1,88 @@
-import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useFinancialRecords } from "../../contexts/financial.context";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useFinancialRecords } from "../../contexts/financial.context"; // นำเข้าคอนเท็กซ์
 
-const AddRecord = () => {
+const EditRecord = () => {
+  const { id } = useParams();
+  const { fetchRecords, updateRecord } = useFinancialRecords(); // รับฟังก์ชันจาก Context
   const [financial, setFinancial] = useState({
     category: "",
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     description: "",
     amount: "",
     paymentMethod: "",
   });
-
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { AddRecord } = useFinancialRecords();
+
+  useEffect(() => {
+    const loadRecord = async () => {
+      try {
+        const response = await fetchRecords(id); // เรียกใช้ฟังก์ชันจาก Context
+        if (response.status === 200) {
+          setFinancial(response.data);
+        } else {
+          throw new Error("Failed to fetch record");
+        }
+      } catch (error) {
+        console.error("Error fetching record:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Fetch Failed",
+          text: error.message,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRecord();
+  }, [id, fetchRecords]); // เพิ่ม `fetchRecord` ใน dependencies
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFinancial((prev) => ({ ...prev, [name]: value }));
+    setFinancial({ ...financial, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic validation
-    if (
-      !financial.category ||
-      !financial.date ||
-      !financial.amount ||
-      !financial.paymentMethod ||
-      !financial.description
-    ) {
-      Swal.fire({
-        title: "Error",
-        text: "Please fill out all required fields",
-        icon: "error",
-      });
-      return;
-    }
-
-    // Add userID to the record data
-    const record = { ...financial, userID: user.id };
-
     try {
-      const response = await AddRecord(record);
-
-      // Ensure that response is not undefined
-      if (response && (response.status === 200 || response.status === 201)) {
+      const response = await updateRecord(id, financial); // เรียกใช้ฟังก์ชันจาก Context
+      if (response.status === 200) {
         Swal.fire({
-          title: "Success",
-          text: "Record added successfully",
+          title: "Record Updated",
+          text: response.data.message || "Record updated successfully",
           icon: "success",
-        }).then(() => {
-          navigate("/"); // Redirect to home
         });
+        navigate("/");
       } else {
-        Swal.fire({
-          title: "Error",
-          text: "Failed to add record. Please try again later.",
-          icon: "error",
-        });
+        throw new Error("Failed to update record");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error updating record:", error);
       Swal.fire({
-        title: "Error",
-        text: "An error occurred while adding the record. Please try again later.",
         icon: "error",
+        title: "Update Failed",
+        text: error.response?.data?.message || error.message,
       });
     }
   };
 
+  if (loading) {
+    return (
+      <div className="p-8 max-w-lg mx-auto bg-white shadow-md rounded-lg mt-20">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 max-w-lg mx-auto bg-white shadow-md rounded-lg mt-20">
-      {/* Added mt-20 to ensure space below the navbar */}
       <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
-        Add Financial Record
+        Edit Financial Record
       </h1>
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Category of Entry */}
         <div className="form-group">
           <label className="block text-gray-700 font-semibold mb-2">
             Category
@@ -88,7 +90,7 @@ const AddRecord = () => {
           <select
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             name="category"
-            value={financial.category}
+            value={financial.category || ""}
             onChange={handleChange}
           >
             <option value="">Select Category</option>
@@ -97,19 +99,17 @@ const AddRecord = () => {
           </select>
         </div>
 
-        {/* Date */}
         <div className="form-group">
           <label className="block text-gray-700 font-semibold mb-2">Date</label>
           <input
             type="date"
             name="date"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={financial.date}
+            value={financial.date || ""}
             onChange={handleChange}
           />
         </div>
 
-        {/* Description */}
         <div className="form-group">
           <label className="block text-gray-700 font-semibold mb-2">
             Description
@@ -118,12 +118,11 @@ const AddRecord = () => {
             name="description"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter description"
-            value={financial.description}
+            value={financial.description || ""}
             onChange={handleChange}
           />
         </div>
 
-        {/* Amount */}
         <div className="form-group">
           <label className="block text-gray-700 font-semibold mb-2">
             Amount
@@ -134,12 +133,11 @@ const AddRecord = () => {
             name="amount"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter amount"
-            value={financial.amount}
+            value={financial.amount || ""}
             onChange={handleChange}
           />
         </div>
 
-        {/* Payment Method */}
         <div className="form-group">
           <label className="block text-gray-700 font-semibold mb-2">
             Payment Method
@@ -147,7 +145,7 @@ const AddRecord = () => {
           <select
             name="paymentMethod"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={financial.paymentMethod}
+            value={financial.paymentMethod || ""}
             onChange={handleChange}
           >
             <option value="">Select Payment Method</option>
@@ -157,7 +155,6 @@ const AddRecord = () => {
           </select>
         </div>
 
-        {/* Submit Button */}
         <div className="form-group mt-6">
           <button
             type="submit"
@@ -171,4 +168,4 @@ const AddRecord = () => {
   );
 };
 
-export default AddRecord;
+export default EditRecord;

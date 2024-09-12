@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import FinancialService from"../Services/financial.service";
-
-
+import { useFinancialRecords } from "../contexts/financial.context";
+import { format } from "date-fns";
+import FinancialServices from "../Services/financial.service";
 
 function Table() {
   const [records, setRecords] = useState([]);
@@ -15,12 +15,8 @@ function Table() {
     const fetchData = async () => {
       try {
         if (user) {
-          // ตรวจสอบว่าผู้ใช้ได้ล็อกอินแล้ว
           const response =
-            await FinancialService.getAllFinancialRecordsByUserId(user.id); // ใช้ FinancialService
-          console.log("Data fetched: ", response); // ตรวจสอบโครงสร้างของข้อมูล
-
-          // ตรวจสอบว่า response.data เป็นอาร์เรย์หรือไม่
+            await FinancialServices.getAllFinancialRecordsByUserId(user.id);
           if (Array.isArray(response.data)) {
             setRecords(response.data);
           } else {
@@ -34,9 +30,9 @@ function Table() {
         console.error("Error fetching data:", error);
       }
     };
-
     fetchData();
-  }, [user]); // เพิ่ม 'user' เป็น dependency
+  }, [user]);
+
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: "คุณแน่ใจหรือ?",
@@ -50,7 +46,7 @@ function Table() {
 
     if (result.isConfirmed) {
       try {
-        const response = await FinancialService.deleteFinancialRecord(id);
+        const response = await deleteRecord(id);
         if (response.status === 200 || response.status === 204) {
           Swal.fire("ลบแล้ว!", "เรคคอร์ดของคุณถูกลบแล้ว.", "success");
           setRecords(records.filter((record) => record.id !== id));
@@ -75,40 +71,64 @@ function Table() {
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="table table-xs table-pin-rows table-pin-cols">
-        <thead>
+    <div className="overflow-x-auto bg-gray-100 p-4 rounded-lg shadow-md">
+      <table className="min-w-full bg-white divide-y divide-gray-200">
+        <thead className="bg-gray-50">
           <tr>
-            <th></th>
-            <td>Category</td>
-            <td>Date</td>
-            <td>Description</td>
-            <td>Amount</td>
-            <td>Payment Method</td>
-            <th>Actions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              #
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Category
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Date
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Description
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Amount
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Payment Method
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-white divide-y divide-gray-200">
           {records.map((record, index) => (
             <tr key={record.id || index}>
-              {" "}
-              {/* ใช้ index ถ้าไม่มี id */}
-              <th>{index + 1}</th>
-              <td>{record.category}</td>
-              <td>{new Date(record.date).toLocaleDateString()}</td>
-              <td>{record.description}</td>
-              <td>{record.amount}</td>
-              <td>{record.paymentMethod}</td>
-              <td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {index + 1}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {record.category}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {new Date(record.date).toLocaleDateString()}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {record.description}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {record.amount}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {record.paymentMethod}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
                   onClick={() => handleEdit(record.id)}
-                  className="btn btn-secondary btn-sm mr-2"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 mr-2"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(record.id)}
-                  className="btn btn-danger btn-sm"
+                  className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
                 >
                   Delete
                 </button>
@@ -116,15 +136,27 @@ function Table() {
             </tr>
           ))}
         </tbody>
-        <tfoot>
+        <tfoot className="bg-gray-50">
           <tr>
-            <th></th>
-            <td>Category</td>
-            <td>Date</td>
-            <td>Description</td>
-            <td>Amount</td>
-            <td>Payment Method</td>
-            <th>Actions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Category
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Date
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Description
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Amount
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Payment Method
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
           </tr>
         </tfoot>
       </table>

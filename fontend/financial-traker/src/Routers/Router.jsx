@@ -4,6 +4,7 @@ import Home from "../Pages/home";
 import Layout from "../Component/Layout";
 import Dashbord from "../Pages/Dashbord";
 import { FinancialRecordProvider } from "../contexts/financial.context";
+import EditRecord from "../Pages/Dashbord/EditRecordform";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
             <Dashbord />
           </FinancialRecordProvider>
         ),
+      },
+      {
+        path: "edit/:id", // แก้ไขเส้นทางให้ถูกต้อง
+        element: <EditRecord />,
       },
     ],
   },
