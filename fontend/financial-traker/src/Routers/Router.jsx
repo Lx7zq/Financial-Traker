@@ -1,6 +1,6 @@
 import React from "react";
 import { createBrowserRouter } from "react-router-dom";
-import Home from "../Pages/home";
+import Home from "../Pages/Home";
 import Layout from "../Component/Layout";
 import Dashbord from "../Pages/Dashbord";
 import { FinancialRecordProvider } from "../contexts/financial.context";
