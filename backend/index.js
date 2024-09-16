@@ -4,9 +4,10 @@ const financialRouter = require("./router/financial.router")
 require("dotenv").config();
 const PORT = process.env.PORT || 5000;
 const cors = require("cors");
-const frontend_url = process.env.FRONTEND_URL
+
 const corsOption = {
-  origin: frontend_url
+  origin: ['https://financial-traker-front.vercel.app', 'http://localhost:5173'], // อนุญาตหลาย origin
+  credentials: true, // หากใช้ cookies หรือ tokens
 };
 
 //use middleware
